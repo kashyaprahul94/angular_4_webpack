@@ -1,35 +1,27 @@
 import { ModuleWithProviders } from "@angular/core";
-import { UIRouterModule } from "@uirouter/angular";
+import { Routes, RouterModule } from "@angular/router";
 
 import { Base } from "./components/base";
 import { Home } from "./components/home";
 
-const routes: any[] = [
-
+const routes: Routes = [
 	{
-		name: "base",
-		url: "/",
-		views: {
-			main: {
-
-			}
-		}
+		path: "",
+		redirectTo: "/home",
+		pathMatch: "full"
 	},
-
 	{
-		name: "home",
-		url: "/home",
-		views: {
-			main: {
-				component: Home
-			}
-		}
+		path: "home",
+		component: Home
+	},
+	{
+		path: "**",
+		component: Home
 	}
 ];
 
-export const RoutingModule: ModuleWithProviders = UIRouterModule.forRoot({
-	states: routes,
-	useHash: false
+export const RoutingModule: ModuleWithProviders = RouterModule.forRoot( routes, {
+	useHash: true
 });
 
 export const RoutingProviders: any[] = [  ];

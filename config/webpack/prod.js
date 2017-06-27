@@ -5,7 +5,6 @@ const webpack = require( "webpack" );
 const autoprefixer = require( "autoprefixer" );
 const HtmlWebpackPlugin = require( "html-webpack-plugin" );
 const ExtractTextPlugin = require( "extract-text-webpack-plugin" );
-const CopyWebpackPlugin = require( "copy-webpack-plugin" );
 const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 
 
@@ -14,9 +13,9 @@ const root = ( ...args ) => {
 };
 
 module.exports = ( options ) => {
-
+	
 	let config = {
-
+	
 	};
 	
 	config.node = {
@@ -25,108 +24,97 @@ module.exports = ( options ) => {
 		net: "empty",
 		tls: "empty"
 	};
-
+	
 	config.entry = {
 		polyfills: root( "src", "app", "polyfills.ts" ),
 		vendor: root( "src", "app", "vendor.ts" ),
 		app: root( "src", "app", "boot.ts" ),
 	};
-
+	
 	config.output = {
 		path: root( "build" ),
 		publicPath: "/",
 		filename: "js/[name].js"
 	};
-
+	
 	config.resolve = {
 		extensions: [ ".ts", ".js", ".json", ".css", ".scss", ".html" ],
 	};
-
+	
 	config.module = {
-
+		
 		rules: [
-
+			
 			{
 				test: /\.ts$/,
-				loaders: [
-					`awesome-typescript-loader?{ tsconfig: "tsconfig.json" }`,
-					"angular2-template-loader"
-				],
 				exclude: [
 					/node_modules\/(?!(ng2-.+))/
+				],
+				use: [
+					"awesome-typescript-loader?{ tsconfig: \"tsconfig.json\" }",
+					"angular2-template-loader"
 				]
 			},
-
+			
 			{
 				test: /\.json$/,
-				loader: "json-loader"
+				use: [ "json-loader" ]
 			},
-
+			
 			{
 				test: /\.css$/,
-				exclude: root( "src", "app" ),
-				loader: ExtractTextPlugin.extract({
-					fallback: "style-loader",
-					use: [ "css-loader", "postcss-loader" ]
+				use: ExtractTextPlugin.extract({
+					fallback: "to-string-loader",
+					use: [ "style-loader", "css-loader", "postcss-loader" ]
 				})
 			},
-
+			
 			{
-				test: /\.css$/,
-				include: root( "src", "app" ),
-				loader: "raw-loader!postcss-loader"
-			},
-
-			{
-				test: /\.(scss|sass)$/,
-				exclude: [
-					root( "src", "app" )
+				test: /\.(css|scss|sass)$/,
+				include: [
+					root( "src", "app" ),
+					root( "src", "public", "assets", "sass" )
 				],
-				loader: ExtractTextPlugin.extract({
-					fallback: "style-loader",
-					use: [ "css-loader", "postcss-loader", "sass-loader" ]
-				})
+				use: [ "to-string-loader", "css-loader", "postcss-loader", "sass-loader" ]
 			},
-
-			{
-				test: /\.(scss|sass)$/,
-				exclude: [
-					root( "src", "public", "assets", "sass" ),
-				],
-				loader: "raw-loader!postcss-loader!sass-loader"
-			},
-
+			
 			{
 				test: /\.html$/,
-				loader: "raw-loader",
-				exclude: root( "src", "public" )
+				use: [ "raw-loader" ],
+				exclude: [
+					root( "src", "public" )
+				]
 			},
 			
-			// {
-			// 	test: /\.(woff|woff2)/,
-			// 	loader: "url-loader?limit=10000&mimetype=application/font-[ext]&name=[path][name].[ext]"
-			// },
+			{
+				test: /\.(png|jpe?g|gif|svg|ico)$/,
+				use: [ "file-loader?name=assets/img/[name].[ext]?" ],
+				include: [
+					root( "src", "public", "assets", "img" )
+				]
+			},
 			
 			{
-				test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-				loader: "file-loader?name=fonts/[name].[hash].[ext]?"
+				test: /\.(svg|woff|woff2|ttf|eot|ico)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+				use: [ "file-loader?name=assets/fonts/[name].[ext]?" ]
 			}
 		]
 	};
-
+	
 	config.plugins = [
-
+		
 		new webpack.ContextReplacementPlugin(
 			/angular(\\|\/)core(\\|\/)@angular/,
 			root( "src" )
 		),
-
+		
 		new webpack.LoaderOptionsPlugin({
-   
+			
 			options: {
 				
 				sassLoader: {
 					includePaths: [
+						root( "src", "app" ),
 						root( "src", "public", "assets", "sass" )
 					]
 				},
@@ -137,11 +125,7 @@ module.exports = ( options ) => {
 					})
 				]
 			}
-		})
-	];
-
-	
-	config.plugins.push(
+		}),
 		
 		new CommonsChunkPlugin({
 			name: [ "polyfills", "vendor" ]
@@ -153,34 +137,28 @@ module.exports = ( options ) => {
 		}),
 		
 		new ExtractTextPlugin({
-			filename: "css/[name].[hash].css",
-			disable: false
+			filename: "assets/css/[name].css",
+			disable: true
 		}),
-	
+		
 		new webpack.ProvidePlugin({
 			$: "jquery",
 			jquery: "jquery",
 			jQuery: "jquery"
 		})
-	);
-	
-	config.preLoaders = [
-		{
-			test: /\.js$/,
-			loader: 'source-map-loader',
-			exclude: [
-				root( "node_modules/@ngrx/core" ),
-				root( "node_modules/@ngrx/router" )
-			]
-		}
 	];
+	
 	
 	config.devServer = {
 		contentBase: root( "src", "public" ),
 		historyApiFallback: true,
 		quiet: true,
-		stats: "minimal"
+		stats: "minimal",
+		compress: true,
+		port: 9085,
+		open: false,
+		hot: false
 	};
-
+	
 	return config;
 };

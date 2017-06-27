@@ -1,6 +1,8 @@
-import "core-js/client/shim";
-import "reflect-metadata";
-import "zone.js/dist/zone.js";
+require( "core-js/es6" );
+require( "core-js/es6/reflect" );
+require( "reflect-metadata" );
+require( "zone.js/dist/zone" );
+require( "zone.js/dist/long-stack-trace-zone" );
 
 const isProd: boolean = false;
 

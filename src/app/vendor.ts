@@ -16,7 +16,6 @@ import "@angular/platform-browser/animations";
 
 
 import "rxjs";
-import "@uirouter/angular";
 
 
-import 'bootstrap/dist/css/bootstrap.css';
+import "bootstrap/dist/css/bootstrap.css";

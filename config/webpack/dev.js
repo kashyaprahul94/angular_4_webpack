@@ -1,16 +1,23 @@
-const path = require( "path" );
-const rootPath = require( "app-root-path" );
-const webpack = require( "webpack" );
+const Path = require( "path" );
+const RootPath = require( "app-root-path" );
 
-const autoprefixer = require( "autoprefixer" );
+const Webpack = require( "webpack" );
+
+const TSLoader = require( "awesome-typescript-loader" );
+const Autoprefixer = require( "autoprefixer" );
 const HtmlWebpackPlugin = require( "html-webpack-plugin" );
+const CopyWebpackPlugin = require( "copy-webpack-plugin" );
 const ExtractTextPlugin = require( "extract-text-webpack-plugin" );
-const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
+
+
+const CommonsChunkPlugin = Webpack.optimize.CommonsChunkPlugin;
 
 
 const root = ( ...args ) => {
-	return rootPath.resolve( path.join( ...args ) );
+	return RootPath.resolve( Path.join( ...args ) );
 };
+
+
 
 module.exports = ( options ) => {
 
@@ -33,133 +40,125 @@ module.exports = ( options ) => {
 
 	config.output = {
 		path: root( "build" ),
-		publicPath: "/",
-		filename: "js/[name].js"
+		publicPath: "",
+		filename: "assets/js/[name].js"
 	};
 
 	config.resolve = {
 		extensions: [ ".ts", ".js", ".json", ".css", ".scss", ".html" ],
 	};
-
-	config.module = {
-
-		rules: [
-
-			{
-				test: /\.ts$/,
-				loaders: [
-					`awesome-typescript-loader?{ tsconfig: "tsconfig.json" }`,
-					"angular2-template-loader"
-				],
-				exclude: [
-					/node_modules\/(?!(ng2-.+))/
-				]
-			},
-
-			{
-				test: /\.json$/,
-				loader: "json-loader"
-			},
-
-			{
-				test: /\.css$/,
-				exclude: root( "src", "app" ),
-				loader: ExtractTextPlugin.extract({
-					fallback: "style-loader",
-					use: [ "css-loader", "postcss-loader" ]
-				})
-			},
-
-			{
-				test: /\.css$/,
-				include: root( "src", "app" ),
-				loader: "raw-loader!postcss-loader"
-			},
-
-			{
-				test: /\.(scss|sass)$/,
-				exclude: [
-					root( "src", "app" )
-				],
-				loader: "null-loader"
-			},
-
-			{
-				test: /\.(scss|sass)$/,
-				exclude: [
-					root( "src", "public", "assets", "sass" ),
-				],
-				loader: "raw-loader!postcss-loader!sass-loader"
-			},
-
-			{
-				test: /\.html$/,
-				loader: "raw-loader",
-				exclude: root( "src", "public" )
-			},
-			
-			{
-				test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-				loader: "file-loader?name=fonts/[name].[hash].[ext]?"
-			}
-		]
-	};
-
-	config.plugins = [
-
-		new webpack.ContextReplacementPlugin(
-			/angular(\\|\/)core(\\|\/)@angular/,
-			root( "src" )
-		),
-
-		new webpack.LoaderOptionsPlugin({
-   
-			options: {
-				
-				sassLoader: {
-					includePaths: [
-						root( "src", "public", "assets", "sass" )
-					]
-				},
-				
-				postcss: [
-					autoprefixer({
-						browsers: [ "last 2 version" ]
-					})
-				]
-			}
-		})
-	];
-
 	
-	config.plugins.push(
+	
+	config.devtool = "#source-map";
+	
+	
+	config.devServer = {
+		open: false,
+		port: 9085,
+		contentBase: root( "src", "public" ),
+		historyApiFallback: true
+	};
+	
+	
+	config.plugins = [
 		
 		new CommonsChunkPlugin({
 			name: [ "polyfills", "vendor" ]
 		}),
 		
-		new HtmlWebpackPlugin({
-			template: root( "src", "public", "index.html" ),
-			chunksSortMode: "dependency"
-		}),
+		new Webpack.ContextReplacementPlugin(
+			/angular(\\|\/)core(\\|\/)@angular/,
+			root( "src" )
+		),
 		
-		new ExtractTextPlugin({
-			filename: "css/[name].[hash].css",
-			disable: true
-		}),
-	
-		new webpack.ProvidePlugin({
+		new Webpack.ProvidePlugin({
 			$: "jquery",
 			jquery: "jquery",
 			jQuery: "jquery"
-		})
-	);
-	
-	config.devServer = {
-		contentBase: root( "src", "public" ),
-		historyApiFallback: true,
-		quiet: true,
-		stats: "minimal"
+		}),
+		
+		new TSLoader.CheckerPlugin(),
+		
+		new HtmlWebpackPlugin({
+			template: root( "src", "public", "index.html" ),
+			chunksSortMode: "dependency",
+		}),
+		
+		new Webpack.LoaderOptionsPlugin({
+			options: {
+				postcss: [
+					Autoprefixer( {
+						browsers: [ "last 3 version" ]
+					})
+				]
+			}
+		}),
+		
+		new ExtractTextPlugin({
+			filename: "assets/css/[name].css",
+			disable: true
+		}),
+		
+		new CopyWebpackPlugin(
+			[{
+				from: root( "src", "public", "assets" ),
+				to: 'assets',
+			}]
+		)
+	];
+
+	config.module = {
+
+		rules: [
+			
+			{
+				test: /\.ts$/,
+				exclude: [
+					root( "git" ),
+					/node_modules/
+				],
+				use: [
+					{
+						loader: "awesome-typescript-loader",
+						options: {
+							configFileName: root( "tsconfig.json" )
+						}
+					},
+					"angular2-template-loader"
+				]
+			},
+			
+			{
+				test: /\.html$/i,
+				use: [ "html-loader" ]
+			},
+			
+			{
+				test: /\.(css)$/,
+				use: ExtractTextPlugin.extract({
+					fallback: "to-string-loader",
+					use: [ "style-loader", "css-loader", "postcss-loader" ]
+				})
+			},
+			
+			{
+				test: /\.(css|scss|sass)$/,
+				include: [
+					root( "src" )
+				],
+				use: [ "to-string-loader", "css-loader", "sass-loader" ]
+			},
+			
+			{
+				test: /\.(png|jpe?g|gif)$/,
+				use: [ "url-loader?name=assets/img/[name].[ext]" ]
+			},
+			
+			{
+				test: /\.(svg|woff|woff2|ttf|eot|ico)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+				use: [ "file-loader?name=assets/fonts/[name].[ext]?" ]
+			}
+		]
 	};
 
 	return config;
